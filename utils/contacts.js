@@ -1,4 +1,5 @@
 const fs = require('fs');
+const pool = require('../db.js')
 
 const dirPath = './data';
 if(!fs.existsSync(dirPath)) {
@@ -11,17 +12,21 @@ if(!fs.existsSync(dataPath)) {
     fs.writeFileSync(dataPath, '[]', 'utf-8');
 }
 
-const loadContact = () => {
-    const fileBuffer = fs.readFileSync('data/contacts.json', 'utf-8');
-    const contacts = JSON.parse(fileBuffer)
+const loadContact = async () => {
+    // const fileBuffer = fs.readFileSync('data/contacts.json', 'utf-8');
+    const connection = await pool.connect();
+    const query = `SELECT * FROM contacts`;
+    const results = await connection.query(query);
+    const contacts = results.rows;
+    // const contacts = JSON.parse(fileBuffer)
     return contacts;
 }
 
-const findContact = (nama) => {
-    const contacts = loadContact();
-    const contact = contacts.find((contact) => contact.nama.toLowerCase() === nama.toLowerCase());
-    return contact;
-}
+// const findContact = (nama) => {
+//     const contacts = loadContact();
+//     const contact = contacts.find((contact) => contact.nama.toLowerCase() === nama.toLowerCase());
+//     return contact;
+// }
 
 // menimpa file contacts.json dengan data yang baru
 const saveContacts = (contacts) => {
@@ -61,4 +66,4 @@ const updateContacts = (contactBaru) => {
     
 }
 
-module.exports = { loadContact, findContact, addContact, cekDuplikat, deleteContact, updateContacts }
+module.exports = { loadContact, addContact, cekDuplikat, deleteContact, updateContacts }

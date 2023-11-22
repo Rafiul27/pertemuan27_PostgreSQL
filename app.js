@@ -101,22 +101,26 @@ app.get('/about', (req, res) => {
 });
 
 // Penanganan rute untuk halaman contact
-app.get('/contact', (req, res) => {
-    const contacts = loadContact();
+app.get('/contact', async (req, res) => {
 
-    if (contacts.length === 0) {
-        res.render('contact', {
-            title: 'Kontak',
-            msg: 'Data Contact tidak tersedia.', // Pesan ketika data kosong
-            layout: 'layout/main-layout',
-            contacts: []
-        });
-    } else {
+    try{
+        const contactList = await pool.query("SELECT * FROM contacts");
+
+        const contacts = contactList.rows;
         res.render('contact', {
             title: 'Kontak',
             contacts,
             msg: req.flash('msg'),
             layout: 'layout/main-layout',
+        });
+        
+    }catch(err){
+        console.error(err.message);
+        res.render('contact', {
+            title: 'Kontak',
+            msg: 'Data Contact tidak tersedia.', // Pesan ketika data kosong
+            layout: 'layout/main-layout',
+            contacts: []
         });
     }
 });
@@ -229,8 +233,12 @@ app.post('/contact/update', [
 })
 
 // halaman detail contact
-app.get('/contact/:nama', (req, res) => {
-    const contact = findContact(req.params.nama); 
+app.get('/contact/:nama', async (req, res) => {
+    const name = req.params.nama;
+    
+    const contacts = await loadContact();
+    
+    const contact = contacts.find((contact) => contact.nama === name);
     
     // // Memeriksa apakah ada data kontak
     // if (contact.length === 0) {
