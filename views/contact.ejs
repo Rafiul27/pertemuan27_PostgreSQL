@@ -1,0 +1,47 @@
+<h1>Contact List</h1>
+<br>
+  <div class="container">
+    <% if (!contacts.length === 0) { %>
+      <div class="alert alert-danger fw-bold" role="alert">
+        Data Contact tidak tersedia. 
+      </div>
+    <% } %>
+    <!-- <h4 class="p-3">Ini adalah daftar kontak</h4> -->
+    <p class="p-1">Ini dalah beberapa List daftar kontak yang tersedia :</p>
+    <a href="/contact/add" class="btn btn-primary mb-2">Tambah data Contact</a>
+
+    <% if (msg.length !== 0) { %>
+      <div class="alert alert-success" role="alert">
+        <%= msg %>
+      </div>
+    <% } %>
+    <div class="table-responsive">
+      <table class="table table-info table-bordered">
+        <thead>
+          <tr>
+            <th scope="col" class="text-center">No</th>
+            <th scope="col" class="text-center">Nama</th>
+            <th scope="col" class="text-center">Nomor HP</th>
+            <!-- <th scope="col" class="text-center">Email</th> -->
+            <th scope="col" class="text-center">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% contacts.forEach((contact, index) => { %>
+            <tr>
+              <td class="text-center"><%= index + 1 %></td>
+              <td><%= contact.nama %></td>
+              <td><%= contact.mobile %></td>
+              <td class="text-center">
+                <!-- Tambahkan tombol atau tautan aksi di sini -->
+                <!-- <a href="/contact/ class="btn btn-primary badge rounded-pill"><i class="bibi-info-circle">details </i></a> -->
+                <a href="/contact/<%= contact.nama %>"><button class="btn btn-primary">detail</button></a>
+                <a href="/contact/edit/<%= contact.nama %>"><button class="btn btn-success">Update</button></a>
+                <a href="/contact/delete/<%= contact.nama %>" onclick="return confirm('Apakah anda yakin ingin dihapus?');"><button class="btn btn-danger">Delete</button></a>
+              </td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
