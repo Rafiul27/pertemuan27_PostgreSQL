@@ -3,7 +3,7 @@ const express = require('express');
 
 const expressLayouts = require('express-ejs-layouts'); // Mengimpor modul express-ejs-layouts
 
-const { loadContact, findContact, addContact, cekDuplikat, deleteContact, updateContacts } = require('./utils/contacts');
+const { loadContact, findContact, addContact, cekDuplikat, deleteContact, updateContacts, cekemailDuplicat, cariContact } = require('./utils/contacts');
 
 const { body, validationResult, check } = require('express-validator');
 
@@ -136,8 +136,8 @@ app.get('/contact/add', (req, res) => {
 
 // proses data contact
 app.post('/contact', [
-    body('nama').custom((value) => {
-        const duplikat = cekDuplikat(value);
+    body('nama').custom(async (value) => {
+        const duplikat = await cekDuplikat(value);
         if(duplikat){
             throw new Error('Nama contact sudah digunakan!')
         }
@@ -145,7 +145,7 @@ app.post('/contact', [
     }),
     check('email', 'Email tidak valid!').isEmail(),
     check('mobile', 'Nomor Handphone tidak valid!').isMobilePhone('id-ID')
-], (req, res) => {
+],async (req, res) => {
     const errors = validationResult(req);
     if(!errors.isEmpty()){
         // return res.status(400).json({ errors: errors.array() });
@@ -155,49 +155,71 @@ app.post('/contact', [
             errors: errors.array(),
         })
     }else{
-        addContact(req.body);
-        // Kirimkan flash message
-        req.flash('msg', 'Data Contact Anda Berhasil ditambahkan!');
-        res.redirect('/contact');
+        try{
+            await addContact(req.body);
+            // Kirimkan flash message
+            req.flash('msg', 'Data Contact Anda Berhasil ditambahkan!');
+            res.redirect('/contact');
+        }catch(err){
+            console.error(err.message);
+            res.status(500).send("<h1>internal server error</h1>");
+        }
     }
-})
+});
 
 
 // proses delete contact
-app.get('/contact/delete/:nama', (req, res) =>{
-    const contact = findContact(req.params.nama)
+app.get('/contact/delete/:nama',async (req, res) =>{
+    try{
+        const contact = await cariContact(req.params.nama)
 
-    // jika contact tidak ada
-    if(!contact){
-        res.status(404);
-        res.status('<h1>404</h1>');
-    }else{
-        deleteContact(req.params.nama);
-        req.flash('msg', 'Data Contact Anda Berhasil dihapuskan!');
-        res.redirect('/contact');
+        // jika contact tidak ada
+        if(!contact){
+            res.status(404);
+            res.status('<h1>404</h1>');
+        }else{
+            await deleteContact(req.params.nama);
+            req.flash('msg', 'Data Contact Anda Berhasil dihapuskan!');
+            res.redirect('/contact');
+        }
+    }catch(err){
+        console.error(err.message);
+        res.status(500).send("<h1>internal server error</h1>");
     }
 }) 
 
 // Halaman form ubah data contct
-app.get('/contact/edit/:nama', (req, res) => {
-    const contact = findContact(req.params.nama);
+app.get('/contact/edit/:nama',async (req, res) => {
+    try{
+        const contact = await cariContact(req.params.nama);
 
-    res.render('edit-contact', {
-        title: 'Form Ubah Data Contact',
-        layout: 'layout/main-layout',
-        contact,
-    })
+        res.render('edit-contact', {
+            title: 'Form Ubah Data Contact',
+            layout: 'layout/main-layout',
+            contact,
+        });
+    }catch(err){
+        console.error(err.message);
+        res.status(500).send("<h1>internal server error</h1>");
+    }
 });
 
 // proses ubah data
 app.post('/contact/update', [
-    body('nama').custom((value, { req}) => {
-        const duplikat = cekDuplikat(value);
-        if(duplikat){
+    body('nama').custom(async (value, { req}) => {
+        const duplikat = await cekDuplikat(value);
+        if(value !== req.body.oldNama && duplikat){
             throw new Error('Nama contact sudah digunakan!')
         }
         return true;
     }),
+    body("email").custom(async (value) => {
+        const emailDuplicate = await cekemailDuplicat(value);
+        if (emailDuplicate) {
+          throw new Error("Email sudah terdaftar!!");
+        }
+        return true;
+      }),
     check('email', 'Email tidak valid!').isEmail(),
     // body('mobile').custom((value) => {
     //     const duplikat = cekDuplikat(value);
@@ -214,7 +236,7 @@ app.post('/contact/update', [
     //     return true;
     // }),
     check('mobile', 'Nomor Handphone tidak valid!').isMobilePhone('id-ID')
-], (req, res) => {
+],async (req, res) => {
     const errors = validationResult(req);
     if(!errors.isEmpty()){
         // return res.status(400).json({ errors: errors.array() });
@@ -225,10 +247,15 @@ app.post('/contact/update', [
             contact: req.body,
         })
     }else{
-        updateContacts(req.body);
-        // Kirimkan flash message
-        req.flash('msg', 'Data Contact Anda Berhasil diubah!');
-        res.redirect('/contact');
+        try{
+            updateContacts(req.body);
+            // Kirimkan flash message
+            req.flash('msg', 'Data Contact Anda Berhasil diubah!');
+            res.redirect('/contact');
+        }catch(err){
+            console.error(err.message);
+            res.status(500).send("<h1>internal server error</h1>");
+        }
     }
 })
 
